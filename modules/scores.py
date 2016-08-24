@@ -256,8 +256,8 @@ addpoint_command.rate = 60 * 10
 
 def second_addpoint_command(jenni, input):
     """<nick>++ - Adds 1 point to the score system for <nick>."""
-    # also allow <nick>: ++, <nick>++++++, <nick>+=1 (but only 1, other values
-    # not allowed, to avoid += 1000000000000 and the like)
+    # also allow <nick>: ++, <nick>++++++, <nick> +1, <nick>+=1 (but only 1,
+    # other values not allowed, to avoid += 1000000000000 and the like)
     nick = input.group(1)
     if not nick:
         return
@@ -280,8 +280,8 @@ rmpoint_command.rate = 60 * 10
 
 def second_rmpoint_command(jenni, input):
     """<nick>-- - Removes 1 point to the score system for <nick>."""
-    # also allow <nick>: --, <nick>------, <nick>-=1 (but only 1, other values
-    # not allowed, to avoid -= 1000000000000 and the like)
+    # also allow <nick>: --, <nick>------, <nick> -1, <nick>-=1 (but only 1,
+    # other values not allowed, to avoid -= 1000000000000 and the like)
     nick = input.group(1)
     if not nick:
         return
