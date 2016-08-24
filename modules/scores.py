@@ -256,10 +256,8 @@ addpoint_command.rate = 60 * 10
 
 def second_addpoint_command(jenni, input):
     """<nick>++ - Adds 1 point to the score system for <nick>."""
-    nick = input.group(1)
-    if nick:
-        nick = nick.strip()
-    if len(nick) == list(nick).count('+'):
+    nick = input.group(1).rstrip('+')
+    if not nick:
         return
     scores.editpoints(jenni, input, nick, True)
 second_addpoint_command.rule = r'^(\S+)\+\+($|\s)'
@@ -280,10 +278,8 @@ rmpoint_command.rate = 60 * 10
 
 def second_rmpoint_command(jenni, input):
     """<nick>-- - Removes 1 point to the score system for <nick>."""
-    nick = input.group(1)
-    if nick:
-        nick = nick.strip()
-    if len(nick) == list(nick).count('-'):
+    nick = input.group(1).rstrip('-')
+    if not nick:
         return
     scores.editpoints(jenni, input, nick, False)
 second_rmpoint_command.rule = r'^(\S+)\-\-($|\s)'
