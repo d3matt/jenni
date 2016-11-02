@@ -117,6 +117,7 @@ class UnoBot:
         self.lastActive = datetime.now()
         self.timeout = timedelta(minutes=INACTIVE_TIMEOUT)
         self.nonstartable_cards = ['%s%s' % c for c in itertools.product(self.colors, ['R', 'S', 'D2'])] + self.all_special_cards
+        self.use_extra_special = False
 
     def start(self, jenni, owner):
         owner = owner.lower()
@@ -185,6 +186,10 @@ class UnoBot:
         if len(self.deck):
             jenni.msg(CHANNEL, STRINGS['ALREADY_DEALT'])
             return
+
+        tok = [z.strip() for z in str(input).upper().split(' ')]
+        self.use_extra_special = len(tok) > 1 and tok[1] == 'X' # .deal x
+
         self.startTime = datetime.now()
         self.lastActive = datetime.now()
         self.deck = self.createnewdeck()
@@ -299,9 +304,10 @@ class UnoBot:
             for i in range(4):
                 ret.append(a)
 
-        for a in self.extra_special_cards:
-            for i in range(2):
-                ret.append(a)
+        if self.use_extra_special:
+            for a in self.extra_special_cards:
+                for i in range(2):
+                    ret.append(a)
 
         if len(self.playerOrder) > 4:
             ret *= 2
