@@ -34,6 +34,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import random
 from datetime import datetime, timedelta
 import time
+import itertools
 
 away_last = 0
 
@@ -115,6 +116,7 @@ class UnoBot:
         self.dealt = False
         self.lastActive = datetime.now()
         self.timeout = timedelta(minutes=INACTIVE_TIMEOUT)
+        self.nonstartable_cards = ['%s%s' % c for c in itertools.product(self.colors, ['R', 'S', 'D2'])] + self.all_special_cards
 
     def start(self, jenni, owner):
         owner = owner.lower()
@@ -190,7 +192,7 @@ class UnoBot:
             for p in self.players:
                 self.players[p].append(self.getCard ())
         self.topCard = self.getCard()
-        while self.topCard.lstrip(self.colors) in 'R S D2 W WD4 WD40':
+        while self.topCard in self.nonstartable_cards:
            self.topCard = self.getCard()
         self.currentPlayer = 1
         self.cardPlayed(jenni, self.topCard)
