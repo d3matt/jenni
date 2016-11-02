@@ -352,6 +352,7 @@ class UnoBot:
         if user not in self.players:
             jenni.notice(user, msg)
         else:
+            jenni.notice(user, STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards(None, [self.topCard], 1)))
             jenni.notice(user, STRINGS['YOUR_CARDS'] % self.renderCards(user, self.players[user], 0))
             jenni.notice(user, msg)
 
