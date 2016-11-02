@@ -368,7 +368,11 @@ class UnoBot:
             jenni.notice(user, msg)
         else:
             jenni.notice(user, STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards(None, [self.topCard], 1)))
-            jenni.notice(user, STRINGS['YOUR_CARDS'] % self.renderCards(user, self.players[user], 0))
+            # Show up to 15 cards per message
+            cards = list(self.players[user])
+            while cards:
+                jenni.notice(user, STRINGS['YOUR_CARDS'] % self.renderCards(user, cards[:15], 0))
+                cards = cards[15:]
             jenni.notice(user, msg)
 
     def renderCards(self, nick, cards, is_chan):
