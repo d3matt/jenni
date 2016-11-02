@@ -77,6 +77,7 @@ STRINGS = {
     'D2': '\x0300,01%s draws two and is skipped!',
     'CARDS': '\x0300,01Cards: %s',
     'WD4': '\x0300,01%s draws four and is skipped!',
+    'WD8': '\x0300,01%s draws eight and is skipped!',
     'SKIPPED': '\x0300,01%s is skipped!',
     'REVERSED': '\x0300,01Order reversed!',
     'GAINS': '\x0300,01%s gains %s points!',
@@ -94,9 +95,9 @@ STRINGS = {
 class UnoBot:
     def __init__(self):
         self.colored_card_nums = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'R', 'S', 'D2']
-        self.special_scores = {'R' : 20, 'S' : 20, 'D2' : 20, 'W' : 50, 'WD4' : 50}
+        self.special_scores = {'R' : 20, 'S' : 20, 'D2' : 20, 'W' : 50, 'WD4' : 50, 'WD8' : 75}
         self.colors = 'RGBY'
-        self.special_cards = ['W', 'WD4']
+        self.special_cards = ['W', 'WD4', 'WD8']
         self.players = dict()
         self.owners = dict()
         self.players_pce = dict()  # Player color enabled hash table
@@ -187,7 +188,7 @@ class UnoBot:
             for p in self.players:
                 self.players[p].append(self.getCard ())
         self.topCard = self.getCard()
-        while self.topCard.lstrip(self.colors) in 'R S D2 W WD4':
+        while self.topCard.lstrip(self.colors) in 'R S D2 W WD4 WD8':
            self.topCard = self.getCard()
         self.currentPlayer = 1
         self.cardPlayed(jenni, self.topCard)
@@ -362,7 +363,7 @@ class UnoBot:
             nickk = (nick).lower()
         ret = list()
         for c in sorted(cards):
-            if c in ['W', 'WD4']:
+            if c in ['W', 'WD4', 'WD8']:
                 sp = str()
                 if not is_chan and self.players_pce.get(nickk, 0):
                     sp = ' '
@@ -405,8 +406,9 @@ class UnoBot:
             self.players[self.playerOrder[self.currentPlayer]].extend (z)
             self.incPlayer()
         elif card[:2] == 'WD':
-            jenni.msg(CHANNEL, STRINGS['WD4'] % self.playerOrder[self.currentPlayer])
-            z = [self.getCard(), self.getCard(), self.getCard(), self.getCard()]
+            num = int(card[2])
+            jenni.msg(CHANNEL, STRINGS['WD%s' % num] % self.playerOrder[self.currentPlayer])
+            z = [self.getCard() for _ in range(num)]
             jenni.notice(self.playerOrder[self.currentPlayer], STRINGS['CARDS'] % self.renderCards(self.playerOrder[self.currentPlayer], z, 0))
             self.players[self.playerOrder[self.currentPlayer]].extend(z)
             self.incPlayer()
