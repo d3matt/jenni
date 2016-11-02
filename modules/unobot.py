@@ -420,7 +420,7 @@ class UnoBot:
             self.players[self.playerOrder[self.currentPlayer]].extend (z)
             self.incPlayer()
         elif card[:2] == 'WD':
-            num = int(card[2:])
+            num = int(card[2:-1]) # Have to rip the color off the end as well
             jenni.msg(CHANNEL, STRINGS['WD%s' % num] % self.playerOrder[self.currentPlayer])
             z = [self.getCard() for _ in range(num)]
             jenni.notice(self.playerOrder[self.currentPlayer], STRINGS['CARDS'] % self.renderCards(self.playerOrder[self.currentPlayer], z, 0))
