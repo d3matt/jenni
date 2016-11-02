@@ -97,7 +97,9 @@ class UnoBot:
         self.colored_card_nums = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'R', 'S', 'D2']
         self.special_scores = {'R' : 20, 'S' : 20, 'D2' : 20, 'W' : 50, 'WD4' : 50, 'WD40' : 150}
         self.colors = 'RGBY'
-        self.special_cards = ['W', 'WD4', 'WD40']
+        self.special_cards = ['W', 'WD4']
+        self.extra_special_cards = ['WD40']
+        self.all_special_cards = self.special_cards + self.extra_special_cards
         self.players = dict()
         self.owners = dict()
         self.players_pce = dict()  # Player color enabled hash table
@@ -206,7 +208,7 @@ class UnoBot:
         if len(tok) != 3:
             return
         searchcard = str()
-        if tok[1] in self.special_cards and tok[2] in self.colors:
+        if tok[1] in self.all_special_cards and tok[2] in self.colors:
             searchcard = tok[1]
         elif tok[1] in self.colors:
             searchcard = (tok[1] + tok[2])
@@ -295,6 +297,10 @@ class UnoBot:
             for i in range(4):
                 ret.append(a)
 
+        for a in self.extra_special_cards:
+            for i in range(2):
+                ret.append(a)
+
         if len(self.playerOrder) > 4:
             ret *= 2
 
@@ -363,7 +369,7 @@ class UnoBot:
             nickk = (nick).lower()
         ret = list()
         for c in sorted(cards):
-            if c in ['W', 'WD4', 'WD40']:
+            if c in self.all_special_cards:
                 sp = str()
                 if not is_chan and self.players_pce.get(nickk, 0):
                     sp = ' '
