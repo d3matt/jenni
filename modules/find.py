@@ -132,11 +132,13 @@ def findandreplace(jenni, input):
     #else (len == 2) do nothing special
 
     count = 'g' in flags and -1 or 1 # Replace unlimited times if /g, else once
-    if 'i' in flags:
-        regex = re.compile(re.escape(rest[0]),re.U|re.I)
-        repl = lambda s: re.sub(regex,rest[1],s,count == 1)
-    else:
-        repl = lambda s: s.replace(rest[0],rest[1],count)
+    regex = re.compile(rest[0])
+    repl = lambda s: re.sub(regex,rest[1],s,count == 1)
+    #if 'i' in flags:
+    #    regex = re.compile(rest[0])
+    #    repl = lambda s: re.sub(regex,rest[1],s,count == 1)
+    #else:
+    #    repl = lambda s: s.replace(rest[0],rest[1],count)
 
     for line in reversed(search_dict[channel][rnick]):
         if line.startswith("\x01ACTION"):
@@ -148,7 +150,12 @@ def findandreplace(jenni, input):
         if new_phrase != line: # we are done
             break
 
-    if not new_phrase or new_phrase == line: return # Didn't find anything
+    if not new_phrase:
+        phrase = nick + (input.group(1) and ' thinks ' + rnick or '') + ' \x02did not mean\x02 to say: ' + line
+        jenni.say(phrase)
+        return
+    if new_phrase == line:
+        return # Didn't find anything
 
     if len(new_phrase) > 512:
         new_phrase = new_phrase[:512]

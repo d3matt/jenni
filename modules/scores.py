@@ -251,20 +251,20 @@ def addpoint_command(jenni, input):
     scores.editpoints(jenni, input, nick, True)
 addpoint_command.commands = ['addpoint']
 addpoint_command.priorty = 'high'
-addpoint_command.rate = 60 * 10
+#addpoint_command.rate = 60 * 10
 
 
 def second_addpoint_command(jenni, input):
     """<nick>++ - Adds 1 point to the score system for <nick>."""
-    # also allow <nick>: ++, <nick>++++++, <nick> +1, <nick>+=1 (but only 1,
-    # other values not allowed, to avoid += 1000000000000 and the like)
+    # also allow <nick>: ++, <nick>++++++, <nick>+=1 (but only 1, other values
+    # not allowed, to avoid += 1000000000000 and the like)
     nick = input.group(1)
     if not nick:
         return
     scores.editpoints(jenni, input, nick, True)
 second_addpoint_command.rule = r'^(\S+?):?\s*(\+\++|\+1|\+=\s*1)($|\s)'
 second_addpoint_command.priority = 'high'
-second_addpoint_command.rate = 60 * 10
+#second_addpoint_command.rate = 60 * 10
 
 
 def rmpoint_command(jenni, input):
@@ -275,20 +275,20 @@ def rmpoint_command(jenni, input):
     scores.editpoints(jenni, input, nick, False)
 rmpoint_command.commands = ['rmpoint']
 rmpoint_command.priority = 'high'
-rmpoint_command.rate = 60 * 10
+#rmpoint_command.rate = 60 * 10
 
 
 def second_rmpoint_command(jenni, input):
     """<nick>-- - Removes 1 point to the score system for <nick>."""
-    # also allow <nick>: --, <nick>------, <nick> -1, <nick>-=1 (but only 1,
-    # other values not allowed, to avoid -= 1000000000000 and the like)
+    # also allow <nick>: --, <nick>------, <nick>-=1 (but only 1, other values
+    # not allowed, to avoid -= 1000000000000 and the like)
     nick = input.group(1)
     if not nick:
         return
     scores.editpoints(jenni, input, nick, False)
 second_rmpoint_command.rule = r'^(\S+?):?\s*(--+|\-1|-=\s*1)($|\s)'
 second_rmpoint_command.priority = 'high'
-second_rmpoint_command.rate = 60 * 10
+#second_rmpoint_command.rate = 60 * 10
 
 
 def view_scores(jenni, input):
@@ -296,7 +296,7 @@ def view_scores(jenni, input):
     scores.view_scores(jenni, input)
 view_scores.commands = ['points', 'point', 'scores', 'score']
 view_scores.priority = 'medium'
-view_scores.rate = 60 * 3
+#view_scores.rate = 60 * 3
 
 
 def setpoint(jenni, input):
