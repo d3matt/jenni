@@ -308,6 +308,7 @@ class UnoBot:
             for a in self.extra_special_cards:
                 for i in range(2):
                     ret.append(a)
+            self.use_extra_special = False # Only in the first deck
 
         if len(self.playerOrder) > 4:
             ret *= 2
