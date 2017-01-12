@@ -36,12 +36,14 @@ import random
 from datetime import datetime, timedelta
 import time
 import itertools
+import yaml
+import operator
 
 away_last = 0
 
 # Remember to change these 3 lines or nothing will work
 CHANNEL = '##uno'
-SCOREFILE = os.path.expanduser("~/.jenni/unoscores.txt")
+SCOREFILE = os.path.expanduser("~/.jenni/unoscores.yml")
 # Only the owner (starter of the game) can call .unostop to stop the game.
 # But this calls for a way to allow others to stop it after the game has been idle for a while.
 # After this set time, anyone can stop the game via .unostop
@@ -83,7 +85,7 @@ STRINGS = {
     'SKIPPED': '\x0300,01%s is skipped!',
     'REVERSED': '\x0300,01Order reversed!',
     'GAINS': '\x0300,01%s gains %s points!',
-    'SCORE_ROW': '\x0300,01%s: #%s %s (%s points, %s games, %s won, %.2f points per game, %.2f percent wins)',
+    'SCORE_ROW': '\x0300,01#%(rank)s %(nick)s (%(points)s points, won %(won)s of %(games)s games, %(points_per_game)s points per game, %(percent_wins)s percent wins)',
     'GAME_ALREADY_DEALT': '\x0300,01Game has already been dealt, please wait until game is over or stopped.',
     'PLAYER_COLOR_ENABLED': '\x0300,01Hand card colors \x0309,01enabled\x0300,01! Format: <COLOR>/[<CARD>].  Example: R/[D2] is a red Draw Two. Type \'.uno-help\' for more help.',
     'PLAYER_COLOR_DISABLED': '\x0300,01Hand card colors \x0304,01disabled\x0300,01.',
@@ -93,6 +95,61 @@ STRINGS = {
     'PLAYER_LEAVES': '\x0300,01Player %s has left the game.',
     'OWNER_CHANGE': '\x0300,01Owner %s has left the game. New owner is %s.',
 }
+
+class ScoreBoard(object):
+    def __init__(self, filename):
+        self.filename = filename
+        try:
+            self.scores = yaml.load(open(self.filename, 'r'))
+        except Exception:
+            self.scores = {}
+
+    def save(self):
+        try:
+            yaml.dump(self.scores, open(self.filename, 'w'))
+        except Exception, e:
+            print 'Failed to write score file %s' % e
+
+    def update(self, players, winner, score, time):
+        for player in players:
+            player = player.lower()
+            player_stats = self.scores.setdefault(player, {})
+            player_stats['games'] = player_stats.get('games', 0) + 1
+            player_stats['time'] = player_stats.get('time', 0) + time
+
+        winner_stats = self.scores[winner]
+        winner_stats['wins'] = winner_stats.get('wins', 0) + 1
+        winner_stats['points'] = winner_stats.get('points', 0) + score
+
+    def stats(self):
+        for player, player_stats in self.scores.items():
+            stats = {
+                'nick': player,
+                'games': 0,
+                'time': 0,
+                'wins': 0,
+                'points': 0,
+            }
+            stats.update(player_stats)
+            if stats['wins']:
+                stats['points_per_game'] = '%0.2f' % (float(stats['points']) / stats['games'])
+            else:
+                stats['points_per_game'] = 'N/A'
+            stats['percent_wins'] = '%0.2f' % (float(stats['wins'])/stats['games'])
+            yield stats
+
+    def _stats_by(self, key):
+        return sorted(self.stats(), key=operator.itemgetter(key))
+
+    def stats_by_percent_wins(self):
+        return self._stats_by('percent_wins')
+
+    def stats_by_points_per_game(self):
+        return self._stats_by('points_per_game')
+
+    def stats_by_points(self):
+        return self._stats_by('points')
+
 
 class UnoBot:
     def __init__(self):
@@ -113,12 +170,12 @@ class UnoBot:
         self.drawn = False
         self.scoreFile = SCOREFILE
         self.deck = list()
-        self.prescores = list()
         self.dealt = False
         self.lastActive = datetime.now()
         self.timeout = timedelta(minutes=INACTIVE_TIMEOUT)
         self.nonstartable_cards = ['%s%s' % c for c in itertools.product(self.colors, ['R', 'S', 'D2'])] + self.all_special_cards
         self.use_extra_special = 0
+        self.scores = ScoreBoard(SCOREFILE)
 
     def start(self, jenni, owner):
         owner = owner.lower()
@@ -288,13 +345,15 @@ class UnoBot:
         self.lastActive = datetime.now()
         self.showOnTurn(jenni)
 
+    def scores_messages(self, ranked_scores):
+        for n, score in enumerate(ranked_scores, 1):
+            score['rank'] = n
+            yield STRINGS['SCORE_ROW'] % score
+
     def top10(self, jenni, input):
-        nickk = (input.nick).lower()
-        self.rankings("ppg")
-        i = 1
-        for z in self.prescores[:10]:
-            jenni.msg(nickk, STRINGS['SCORE_ROW'] % ('ppg', i, z[0], z[3], z[1], z[2], float(z[3])/float(z[1]), float(z[2])/float(z[1])*100))
-            i += 1
+        nickk = input.nick.lower()
+        for message in self.scores_messages(self.scores.stats_by_points_per_game()):
+            jenni.msg(nickk, message)
 
     def createnewdeck(self):
         ret = list()
@@ -466,50 +525,10 @@ class UnoBot:
             self.currentPlayer = len(self.players) - 1
 
     def saveScores(self, players, winner, score, time):
-        from copy import copy
-        prescores = dict()
-        try:
-            f = open(self.scoreFile, 'r')
-            for l in f:
-                t = l.replace('\n', '').split(' ')
-                if len (t) < 4: continue
-                if len (t) == 4: t.append(0)
-                prescores[t[0]] = [t[0], int(t[1]), int(t[2]), int(t[3]), int(t[4])]
-            f.close()
-        except: pass
-        for p in players:
-            p = p.lower()
-            if p not in prescores:
-                prescores[p] = [ p, 0, 0, 0, 0 ]
-            prescores[p][1] += 1
-            prescores[p][4] += time
-        prescores[winner][2] += 1
-        prescores[winner][3] += score
-        try:
-            f = open(self.scoreFile, 'w')
-            for p in prescores:
-                f.write(' '.join ([str(s) for s in prescores[p]]) + '\n')
-            f.close()
-        except Exception, e:
-            print 'Failed to write score file %s' % e
+        self.scores.update(players, winner, score, time)
+        self.scores.save()
 
     # Custom added functions ============================================== #
-    def rankings(self, rank_type):
-        from copy import copy
-        self.prescores = list()
-        try:
-            f = open(self.scoreFile, 'r')
-            for l in f:
-                t = l.replace('\n', '').split(' ')
-                if len(t) < 4: continue
-                self.prescores.append(copy (t))
-                if len(t) == 4: t.append(0)
-            f.close()
-        except: pass
-        if rank_type == "ppg":
-            self.prescores = sorted(self.prescores, lambda x, y: cmp((y[1] != '0') and (float(y[3]) / int(y[1])) or 0, (x[1] != '0') and (float(x[3]) / int(x[1])) or 0))
-        elif rank_type == "pw":
-            self.prescores = sorted(self.prescores, lambda x, y: cmp((y[1] != '0') and (float(y[2]) / int(y[1])) or 0, (x[1] != '0') and (float(x[2]) / int(x[1])) or 0))
 
     def showTopCard_demand(self, jenni):
         if not self.game_on or not self.deck:
@@ -585,32 +604,28 @@ class UnoBot:
     def unostat(self, jenni, input):
         text = input.group().lower().split()
 
-        if len(text) != 3:
-            jenni.reply("Invalid input for stats command. Try '.unostats ppg 10' to show the top 10 ranked by points per game. You can also show rankings by percent-wins 'pw'.")
-            return
-
-        if text[1] == "pw" or text[1] == "ppg":
-            self.rankings(text[1])
-            self.rank_assist(jenni, input, text[2], text[1])
-
-        if not self.prescores:
-            jenni.reply(STRINGS['NO_SCORES'])
-
-    def rank_assist(self, jenni, input, nicknum, ranktype):
-        nickk = (input.nick).lower()
-        if nicknum.isdigit():
-            i = 1
-            s = int(nicknum)
-            for z in self.prescores[:s]:
-                jenni.msg(nickk, STRINGS['SCORE_ROW'] % (ranktype, i, z[0], z[3], z[1], z[2], float(z[3])/float(z[1]), float(z[2])/float(z[1])*100))
-                i += 1
+        if len(text) > 1:
+            rank_type = text[1].lower()
         else:
-            j = 1
-            t = str(nicknum)
-            for y in self.prescores:
-                if y[0] == t:
-                    jenni.say(STRINGS['SCORE_ROW'] % (ranktype, j, y[0], y[3], y[1], y[2], float(y[3])/float(y[1]), float(y[2])/float(y[1])*100))
-                j += 1
+            rank_type = 'ppg'
+        ranking = {
+            'ppg': self.scores.stats_by_points_per_game,
+            'pw': self.scores.stats_by_percent_wins,
+            'p': self.scores.stats_by_points,
+        }.get(text.lower(), self.scores.stats_by_points_per_game)
+        if len(text) > 2:
+            limit = int(text[2])
+        else:
+            limit = None
+
+        messages = list(self.scores_messages(ranking()))
+        if limit:
+            messages = messages[:limit]
+        if messages:
+            for message in self.scores_messages(self.scores.stats_by_points_per_game()):
+                jenni.reply(message)
+        else:
+            jenni.reply(STRINGS['NO_SCORES'])
 
 unobot = UnoBot ()
 
