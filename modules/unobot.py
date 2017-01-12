@@ -118,7 +118,7 @@ class UnoBot:
         self.lastActive = datetime.now()
         self.timeout = timedelta(minutes=INACTIVE_TIMEOUT)
         self.nonstartable_cards = ['%s%s' % c for c in itertools.product(self.colors, ['R', 'S', 'D2'])] + self.all_special_cards
-        self.use_extra_special = False
+        self.use_extra_special = 0
 
     def start(self, jenni, owner):
         owner = owner.lower()
@@ -189,7 +189,10 @@ class UnoBot:
             return
 
         tok = [z.strip() for z in str(input).upper().split(' ')]
-        self.use_extra_special = len(tok) > 1 and tok[1] == 'X' # .deal x
+        if len(tok) > 1 and tok[1] == 'X': # .deal x
+            self.use_extra_special = len(self.playerOrder)
+        else:
+            self.use_extra_special = 0
 
         self.startTime = datetime.now()
         self.lastActive = datetime.now()
@@ -305,14 +308,16 @@ class UnoBot:
             for i in range(4):
                 ret.append(a)
 
-        if self.use_extra_special:
-            for a in self.extra_special_cards:
-                for i in range(2):
-                    ret.append(a)
-            self.use_extra_special = False # Only in the first deck
-
         if len(self.playerOrder) > 4:
             ret *= 2
+
+        # Deal as many extra special cards as there are players, but spread
+        # them out.
+        if self.use_extra_special > 0:
+            for a in self.extra_special_cards:
+                for i in range(min(2, self.extra_special_cards)):
+                    ret.append(a)
+            self.use_extra_special -= 2
 
         random.shuffle(ret)
 
