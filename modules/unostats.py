@@ -8,12 +8,14 @@ More info:
  * jenni: https://github.com/myano/jenni/
  * Phenny: http://inamidst.com/phenny/
 """
+import os
+
 
 def rankings (ranktype):
     from copy import copy
     prescores = [ ]
     try:
-        f = open ("unoscores.txt", 'r')
+        f = open (os.path.expanduser("~/.jenni/unoscores.txt"), 'r')
         for l in f:
             t = l.replace ('\n', '').split (' ')
             if len (t) < 4: continue
