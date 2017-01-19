@@ -189,8 +189,10 @@ class UnoBot:
             return
 
         tok = [z.strip() for z in str(input).upper().split(' ')]
-        if len(tok) > 1 and tok[1] == 'X': # .deal x
+        if len(tok) > 1 and tok[1] == 'X': # .deal x [optional count]
             self.use_extra_special = len(self.playerOrder)
+            if len(tok) > 2:
+                self.use_extra_special = int(tok)
         else:
             self.use_extra_special = 0
 
