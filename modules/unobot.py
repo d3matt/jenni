@@ -334,23 +334,7 @@ class UnoBot:
 
     def showOnTurn(self, jenni):
         jenni.msg(CHANNEL, STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards(None, [self.topCard], 1)))
-        jenni.notice(self.playerOrder[self.currentPlayer], STRINGS['YOUR_CARDS'] % self.renderCards(self.playerOrder[self.currentPlayer], self.players[self.playerOrder[self.currentPlayer]], 0))
-        msg = STRINGS['NEXT_START']
-        tmp = self.currentPlayer + self.way
-        if tmp == len(self.players):
-            tmp = 0
-        if tmp < 0:
-            tmp = len(self.players) - 1
-        arr = list()
-        while tmp != self.currentPlayer:
-            arr.append(STRINGS['NEXT_PLAYER'] % (self.playerOrder[tmp], len(self.players[self.playerOrder[tmp]])))
-            tmp = tmp + self.way
-            if tmp == len(self.players):
-                tmp = 0
-            if tmp < 0:
-                tmp = len(self.players) - 1
-        msg += ' - '.join(arr)
-        jenni.notice(self.playerOrder[self.currentPlayer], msg)
+        self.showCards(jenni, self.playerOrder[self.currentPlayer])
 
     def showCards(self, jenni, user):
         user = user.lower()
