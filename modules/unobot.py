@@ -192,7 +192,7 @@ class UnoBot:
         if len(tok) > 1 and tok[1] == 'X': # .deal x [optional count]
             self.use_extra_special = len(self.playerOrder)
             if len(tok) > 2:
-                self.use_extra_special = int(tok)
+                self.use_extra_special = int(tok[2])
         else:
             self.use_extra_special = 0
 
