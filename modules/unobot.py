@@ -317,7 +317,7 @@ class UnoBot:
         # them out.
         if self.use_extra_special > 0:
             # Up to two extra special cards per new deck
-            for i in range(max(2, self.use_extra_special)):
+            for i in range(min(2, self.use_extra_special)):
                 ret.extend(self.extra_special_cards)
             self.use_extra_special -= 2
 
