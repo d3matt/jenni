@@ -48,7 +48,7 @@ class Scores:
         elif (not input.admin) and (input.nick).lower() == nick:
             jenni.reply(self.STRINGS["denied"])
         elif unixpermsRE.match(nick):
-            jenni.reply(self.STRINGS["cantadd"])
+            pass
         else:
             nick = nick.lower()
             chan = (input.sender).lower()
