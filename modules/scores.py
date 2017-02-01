@@ -14,7 +14,9 @@ from modules import unicode as uc
 import pickle
 import os
 import time
+import re
 
+unixpermsRE = re.compile('[-d][-r][-w][-x][-r][-w][-x][-r]') # unix permissions string less the trailing --
 
 class Scores:
     def __init__(self):
@@ -45,6 +47,8 @@ class Scores:
             jenni.reply(self.STRINGS["cantadd"])
         elif (not input.admin) and (input.nick).lower() == nick:
             jenni.reply(self.STRINGS["denied"])
+        elif unixpermsRE.match(nick):
+            pass
         else:
             nick = nick.lower()
             chan = (input.sender).lower()
@@ -280,13 +284,13 @@ rmpoint_command.priority = 'high'
 
 def second_rmpoint_command(jenni, input):
     """<nick>-- - Removes 1 point to the score system for <nick>."""
-    # also allow <nick>: --, <nick>------, <nick>-=1 (but only 1, other values
-    # not allowed, to avoid -= 1000000000000 and the like)
+    # also allow <nick>: --, <nick>--, <nick>-=1 (but only 1, other values not
+    # allowed, to avoid -= 1000000000000 and the like)
     nick = input.group(1)
     if not nick:
         return
     scores.editpoints(jenni, input, nick, False)
-second_rmpoint_command.rule = r'^(\S+?):?\s*(--+|\-1|-=\s*1)($|\s)'
+second_rmpoint_command.rule = r'^(\S+?):?\s*(--|\-1|-=\s*1)($|\s)'
 second_rmpoint_command.priority = 'high'
 #second_rmpoint_command.rate = 60 * 10
 
