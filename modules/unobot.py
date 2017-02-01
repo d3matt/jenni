@@ -313,13 +313,11 @@ class UnoBot:
         if len(self.playerOrder) > 4:
             ret *= 2
 
-        # Deal as many extra special cards as there are players, but spread
-        # them out.
-        if self.use_extra_special > 0:
-            # Up to two extra special cards per new deck
-            for i in range(min(2, self.use_extra_special)):
+        # Deal up to two sets of extra special cards per new deck
+        for i in range(2):
+            if self.use_extra_special > 0:
                 ret.extend(self.extra_special_cards)
-            self.use_extra_special -= 2
+                self.use_extra_special -= 1
 
         random.shuffle(ret)
 
