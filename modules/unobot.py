@@ -43,6 +43,7 @@ away_last = 0
 
 # Remember to change these 3 lines or nothing will work
 CHANNEL = '##uno'
+OLD_SCOREFILE = os.path.expanduser("~/.jenni/unoscores.txt")
 SCOREFILE = os.path.expanduser("~/.jenni/unoscores.yml")
 # Only the owner (starter of the game) can call .unostop to stop the game.
 # But this calls for a way to allow others to stop it after the game has been idle for a while.
@@ -85,7 +86,7 @@ STRINGS = {
     'SKIPPED': '\x0300,01%s is skipped!',
     'REVERSED': '\x0300,01Order reversed!',
     'GAINS': '\x0300,01%s gains %s points!',
-    'SCORE_ROW': '\x0300,01#%(rank)s %(nick)s (%(points)s points, won %(won)s of %(games)s games, %(points_per_game)s points per game, %(percent_wins)s percent wins)',
+    'SCORE_ROW': '\x0300,01#%(rank)s %(nick)s (%(points)s points, won %(wins)s of %(games)s games, %(points_per_game)0.2f points per game, %(percent_wins)0.2f percent wins)',
     'GAME_ALREADY_DEALT': '\x0300,01Game has already been dealt, please wait until game is over or stopped.',
     'PLAYER_COLOR_ENABLED': '\x0300,01Hand card colors \x0309,01enabled\x0300,01! Format: <COLOR>/[<CARD>].  Example: R/[D2] is a red Draw Two. Type \'.uno-help\' for more help.',
     'PLAYER_COLOR_DISABLED': '\x0300,01Hand card colors \x0304,01disabled\x0300,01.',
@@ -96,13 +97,35 @@ STRINGS = {
     'OWNER_CHANGE': '\x0300,01Owner %s has left the game. New owner is %s.',
 }
 
+def parse_old_scores(filename):
+    scores = {}
+    # Old file format was <nick> <games> <wins> <points> [time]
+    for line in open(filename):
+        parts = line.strip('\n').split(' ')
+        if len(parts) < 5:
+            parts.append('0')
+        player = parts[0]
+        games, wins, points, duration = [int(x) for x in parts[1:]]
+        scores[player] = {
+            'games': games,
+            'time': duration,
+            'wins': wins,
+            'points': points,
+        }
+    return scores
+
+
 class ScoreBoard(object):
-    def __init__(self, filename):
+    def __init__(self, filename, old_filename):
         self.filename = filename
+        self.old_filename = old_filename
         try:
             self.scores = yaml.load(open(self.filename, 'r'))
         except Exception:
-            self.scores = {}
+            try:
+                self.scores = parse_old_scores(old_filename)
+            except Exception:
+                self.scores = {}
 
     def save(self):
         try:
@@ -132,14 +155,14 @@ class ScoreBoard(object):
             }
             stats.update(player_stats)
             if stats['wins']:
-                stats['points_per_game'] = '%0.2f' % (float(stats['points']) / stats['games'])
+                stats['points_per_game'] = float(stats['points']) / stats['games']
             else:
-                stats['points_per_game'] = 'N/A'
-            stats['percent_wins'] = '%0.2f' % (float(stats['wins'])/stats['games'])
+                stats['points_per_game'] = 0
+            stats['percent_wins'] = 100*float(stats['wins'])/stats['games']
             yield stats
 
     def _stats_by(self, key):
-        return sorted(self.stats(), key=operator.itemgetter(key))
+        return sorted(self.stats(), key=operator.itemgetter(key), reverse=True)
 
     def stats_by_percent_wins(self):
         return self._stats_by('percent_wins')
@@ -175,7 +198,7 @@ class UnoBot:
         self.timeout = timedelta(minutes=INACTIVE_TIMEOUT)
         self.nonstartable_cards = ['%s%s' % c for c in itertools.product(self.colors, ['R', 'S', 'D2'])] + self.all_special_cards
         self.use_extra_special = 0
-        self.scores = ScoreBoard(SCOREFILE)
+        self.scores = ScoreBoard(SCOREFILE, OLD_SCOREFILE)
 
     def start(self, jenni, owner):
         owner = owner.lower()
@@ -612,17 +635,18 @@ class UnoBot:
             'ppg': self.scores.stats_by_points_per_game,
             'pw': self.scores.stats_by_percent_wins,
             'p': self.scores.stats_by_points,
-        }.get(text.lower(), self.scores.stats_by_points_per_game)
-        if len(text) > 2:
+        }.get(rank_type, self.scores.stats_by_points_per_game)
+        limit = None
+        try:
             limit = int(text[2])
-        else:
-            limit = None
+        except (IndexError, ValueError):
+            pass
 
         messages = list(self.scores_messages(ranking()))
         if limit:
             messages = messages[:limit]
         if messages:
-            for message in self.scores_messages(self.scores.stats_by_points_per_game()):
+            for message in messages:
                 jenni.reply(message)
         else:
             jenni.reply(STRINGS['NO_SCORES'])
