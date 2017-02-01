@@ -95,6 +95,7 @@ STRINGS = {
     'PCE_CLEARED': '\x0300,01All players\' hand card color setting is reset by %s.',
     'PLAYER_LEAVES': '\x0300,01Player %s has left the game.',
     'OWNER_CHANGE': '\x0300,01Owner %s has left the game. New owner is %s.',
+    'STAT_TYPE_ERROR': '\x0300,01Supported rankings are %s.',
 }
 
 def parse_old_scores(filename):
@@ -172,6 +173,12 @@ class ScoreBoard(object):
 
     def stats_by_points(self):
         return self._stats_by('points')
+
+    def stats_by_wins(self):
+        return self._stats_by('wins')
+
+    def stats_by_games(self):
+        return self._stats_by('games')
 
 
 class UnoBot:
@@ -625,17 +632,24 @@ class UnoBot:
             jenni.msg(CHANNEL, STRINGS['PCE_CLEARED'] % nickk)
 
     def unostat(self, jenni, input):
+        ranking_types = {
+            'ppg': self.scores.stats_by_points_per_game,
+            'pw': self.scores.stats_by_percent_wins,
+            'w': self.scores.stats_by_wins,
+            'p': self.scores.stats_by_points,
+            'g': self.scores.stats_by_games,
+        }
         text = input.group().lower().split()
 
         if len(text) > 1:
             rank_type = text[1].lower()
         else:
             rank_type = 'ppg'
-        ranking = {
-            'ppg': self.scores.stats_by_points_per_game,
-            'pw': self.scores.stats_by_percent_wins,
-            'p': self.scores.stats_by_points,
-        }.get(rank_type, self.scores.stats_by_points_per_game)
+        try:
+            ranking = ranking_types[rank_type]
+        except KeyError:
+            jenni.reply(STRINGS['STAT_TYPE_ERROR'] % ', '.join(ranking_types.keys()))
+            return
         limit = None
         try:
             limit = int(text[2])
