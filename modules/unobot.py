@@ -98,6 +98,7 @@ STRINGS = {
     'STAT_TYPE_ERROR': '\x0300,01Supported rankings are %s.',
     'FORCE_PLAY': '\x0300,01Forcing %s to play.',
     'CANT_FORCE_PLAY': '\x0300,01You can\'t force %s to play yet; wait another %s seconds.',
+    'CANT_FORCE_LEAVE': '\x0300,01You can\'t force %s to leave the game yet; wait another %s seconds.',
 }
 
 def parse_old_scores(filename):
@@ -581,6 +582,14 @@ class UnoBot:
         nickk = (input.nick).lower()
         self.remove_player(jenni, nickk)
 
+    def force_leave(self, jenni, input):
+        now = datetime.now()
+        player = self.playerOrder[self.currentPlayer]
+        if now - self.lastActive > self.timeout:
+            self.remove_player(jenni, player)
+        else:
+            jenni.msg(CHANNEL, STRINGS['CANT_FORCE_LEAVE'] % (player, self.timeout.seconds - (now - self.lastActive).seconds))
+
     def remove_player(self, jenni, nick):
         if not self.game_on:
             return
@@ -784,6 +793,15 @@ leave.commands = ['leave']
 leave.priority = 'low'
 leave.thread = False
 leave.rate = 0
+
+def force_leave(jenni, input):
+    if not (input.sender).startswith('#'):
+        return
+    unobot.force_leave(jenni, input)
+force_leave.commands = ['force_leave']
+force_leave.priority = 'low'
+force_leave.thread = False
+force_leave.rate = 0
 
 def remove_on_part(jenni, input):
     if input.sender == CHANNEL:
