@@ -789,7 +789,7 @@ def leave(jenni, input):
     if not (input.sender).startswith('#'):
         return
     unobot.leave(jenni, input)
-leave.commands = ['leave']
+leave.commands = ['leave', 'ragequit', 'rage_quit']
 leave.priority = 'low'
 leave.thread = False
 leave.rate = 0
