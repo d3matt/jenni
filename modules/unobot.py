@@ -331,8 +331,8 @@ class UnoBot:
 
         pl = self.currentPlayer
 
-        self.incPlayer()
         self.cardPlayed(jenni, playcard)
+        self.incPlayer()
 
         if len(self.players[self.playerOrder[pl]]) == 1:
             jenni.msg(CHANNEL, STRINGS['UNO'] % self.playerOrder[pl])
@@ -374,7 +374,6 @@ class UnoBot:
             else:
                 jenni.msg(CHANNEL, STRINGS['PASSED'] % self.playerOrder[self.currentPlayer])
 
-            self.incPlayer()
             self.lastActive = datetime.now()
             self.showOnTurn(jenni)
         else:
@@ -536,30 +535,28 @@ class UnoBot:
         return (card[0] == self.topCard[0]) or (card[1] == self.topCard[1])
 
     def cardPlayed(self, jenni, card):
+        target_player = (self.currentPlayer + self.way) % len(self.players)
         if card[1:] == 'D2':
-            jenni.msg(CHANNEL, STRINGS['D2'] % self.playerOrder[self.currentPlayer])
+            jenni.msg(CHANNEL, STRINGS['D2'] % target_player)
             z = [self.getCard(), self.getCard()]
-            jenni.notice(self.playerOrder[self.currentPlayer], STRINGS['CARDS'] % self.renderCards(self.playerOrder[self.currentPlayer], z, 0))
-            self.players[self.playerOrder[self.currentPlayer]].extend (z)
+            jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(target_player, z, 0))
+            self.players[target_player].extend (z)
             self.incPlayer()
         elif card[:2] == 'WD':
             num = int(card[2:-1]) # Have to rip the color off the end as well
-            jenni.msg(CHANNEL, STRINGS['WD%s' % num] % self.playerOrder[self.currentPlayer])
+            jenni.msg(CHANNEL, STRINGS['WD%s' % num] % target_player)
             z = [self.getCard() for _ in range(num)]
-            jenni.notice(self.playerOrder[self.currentPlayer], STRINGS['CARDS'] % self.renderCards(self.playerOrder[self.currentPlayer], z, 0))
-            self.players[self.playerOrder[self.currentPlayer]].extend(z)
+            jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(target_player, z, 0))
+            self.players[target_player].extend(z)
             self.incPlayer()
         elif card[1] == 'S':
-            jenni.msg(CHANNEL, STRINGS['SKIPPED'] % self.playerOrder[self.currentPlayer])
+            jenni.msg(CHANNEL, STRINGS['SKIPPED'] % target_player)
             self.incPlayer()
         elif card[1] == 'R' and card[0] != 'W':
             jenni.msg(CHANNEL, STRINGS['REVERSED'])
-            if len(self.players) > 2:
-                self.way = -self.way
+            if len(self.players) == 2:
                 self.incPlayer()
-                self.incPlayer()
-            else:
-                self.incPlayer()
+            self.way = -self.way
         self.topCard = card
 
     def gameEnded(self, jenni, winner):
