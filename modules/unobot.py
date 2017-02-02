@@ -96,6 +96,8 @@ STRINGS = {
     'PLAYER_LEAVES': '\x0300,01Player %s has left the game.',
     'OWNER_CHANGE': '\x0300,01Owner %s has left the game. New owner is %s.',
     'STAT_TYPE_ERROR': '\x0300,01Supported rankings are %s.',
+    'FORCE_PLAY': '\x0300,01Forcing %s to play.',
+    'CANT_FORCE_PLAY': '\x0300,01You can\'t force %s to play yet; wait another %s seconds.',
 }
 
 def parse_old_scores(filename):
@@ -340,6 +342,16 @@ class UnoBot:
 
         self.lastActive = datetime.now()
         self.showOnTurn(jenni)
+
+    def force_play(self, jenni, input):
+        now = datetime.now()
+        if now - self.lastActive > self.timeout:
+            jenni.msg(CHANNEL, STRINGS['FORCE_PLAY'] % self.playerOrder[self.currentPlayer])
+            self.incPlayer()
+            self.lastActive = datetime.now()
+            self.showOnTurn(jenni)
+        else:
+            jenni.msg(CHANNEL, STRINGS['CANT_FORCE_PLAY'] % (self.playerOrder[self.currentPlayer], self.timeout.seconds - (now - self.lastActive).seconds))
 
     def draw(self, jenni, input):
         nickk = (input.nick).lower()
@@ -713,6 +725,15 @@ play.commands = ['play', 'p']
 play.priority = 'low'
 play.thread = False
 play.rate = 0
+
+def force_play(jenni, input):
+    if not (input.sender).startswith('#'):
+        return
+    unobot.force_play(jenni, input)
+force_play.commands = ['force_play']
+force_play.priority = 'low'
+force_play.thread = False
+force_play.rate = 0
 
 def draw(jenni, input):
     if not (input.sender).startswith('#'):
