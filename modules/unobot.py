@@ -346,13 +346,39 @@ class UnoBot:
 
     def force_play(self, jenni, input):
         now = datetime.now()
+        player = self.playerOrder[self.currentPlayer]
         if now - self.lastActive > self.timeout:
-            jenni.msg(CHANNEL, STRINGS['FORCE_PLAY'] % self.playerOrder[self.currentPlayer])
+            jenni.msg(CHANNEL, STRINGS['FORCE_PLAY'] % player)
+
+            playable_cards = [c for c in self.players[player] if c[0] == 'W' or self.cardPlayable(c)]
+            if not playable_cards:
+                jenni.msg(CHANNEL, STRINGS['DRAWS'] % player)
+                c = self.getCard()
+                self.players[player].append(c)
+            playable_cards = [c for c in self.players[player] if c[0] == 'W' or self.cardPlayable(c)]
+            if playable_cards:
+                # random card
+                card = random.choice(playable_cards)
+                self.players[player].remove(card)
+                # if it's wild, random color
+                if card[0] == 'W':
+                    card += random.choice('BGRY')
+                self.cardPlayed(jenni, card)
+                if len(self.players[player]) == 1:
+                    jenni.msg(CHANNEL, STRINGS['UNO'] % player)
+                elif len(self.players[player]) == 0:
+                    jenni.msg(CHANNEL, STRINGS['WIN'] % (player, (datetime.now() - self.startTime)))
+                    self.gameEnded(jenni, player)
+                    return
+
+            else:
+                jenni.msg(CHANNEL, STRINGS['PASSED'] % self.playerOrder[self.currentPlayer])
+
             self.incPlayer()
             self.lastActive = datetime.now()
             self.showOnTurn(jenni)
         else:
-            jenni.msg(CHANNEL, STRINGS['CANT_FORCE_PLAY'] % (self.playerOrder[self.currentPlayer], self.timeout.seconds - (now - self.lastActive).seconds))
+            jenni.msg(CHANNEL, STRINGS['CANT_FORCE_PLAY'] % (player, self.timeout.seconds - (now - self.lastActive).seconds))
 
     def draw(self, jenni, input):
         nickk = (input.nick).lower()
