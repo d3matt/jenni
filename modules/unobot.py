@@ -96,6 +96,10 @@ STRINGS = {
     'PLAYER_LEAVES': '\x0300,01Player %s has left the game.',
     'OWNER_CHANGE': '\x0300,01Owner %s has left the game. New owner is %s.',
     'STAT_TYPE_ERROR': '\x0300,01Supported rankings are %s.',
+    'FORCE_PLAY': '\x0300,01Forcing %s to play.',
+    'CANT_FORCE_PLAY': '\x0300,01You can\'t force %s to play yet; wait another %s seconds.',
+    'CANT_FORCE_LEAVE': '\x0300,01You can\'t force %s to leave the game yet; wait another %s seconds.',
+    'PLAYS': '\x0300,01%s plays %s.',
 }
 
 def parse_old_scores(filename):
@@ -328,7 +332,8 @@ class UnoBot:
 
         pl = self.currentPlayer
 
-        self.incPlayer()
+        player = self.playerOrder[self.currentPlayer]
+        jenni.msg(CHANNEL, STRINGS['PLAYS'] % (player, self.renderCards(player, [playcard], True)))
         self.cardPlayed(jenni, playcard)
 
         if len(self.players[self.playerOrder[pl]]) == 1:
@@ -338,8 +343,61 @@ class UnoBot:
             self.gameEnded(jenni, self.playerOrder[pl])
             return
 
+        self.incPlayer()
         self.lastActive = datetime.now()
         self.showOnTurn(jenni)
+
+    def auto_play(self, jenni, input):
+        nickk = (input.nick).lower()
+        if not self.game_on or not self.deck:
+            return
+        if nickk != self.playerOrder[self.currentPlayer]:
+            jenni.msg(CHANNEL, STRINGS['ON_TURN'] % self.playerOrder[self.currentPlayer])
+            return
+        self._auto_play(jenni, nickk)
+        if self.game_on:
+            self.incPlayer()
+            self.lastActive = datetime.now()
+            self.showOnTurn(jenni)
+
+    def _auto_play(self, jenni, player):
+        playable_cards = [c for c in self.players[player] if c[0] == 'W' or self.cardPlayable(c)]
+        if not playable_cards:
+            jenni.msg(CHANNEL, STRINGS['DRAWS'] % player)
+            c = self.getCard()
+            self.players[player].append(c)
+        playable_cards = [c for c in self.players[player] if c[0] == 'W' or self.cardPlayable(c)]
+        if playable_cards:
+            # random card
+            card = random.choice(playable_cards)
+            self.players[player].remove(card)
+            # if it's wild, random color
+            if card[0] == 'W':
+                card += random.choice('BGRY')
+            jenni.msg(CHANNEL, STRINGS['PLAYS'] % (player, self.renderCards(player, [card], True)))
+            self.cardPlayed(jenni, card)
+            if len(self.players[player]) == 1:
+                jenni.msg(CHANNEL, STRINGS['UNO'] % player)
+            elif len(self.players[player]) == 0:
+                jenni.msg(CHANNEL, STRINGS['WIN'] % (player, (datetime.now() - self.startTime)))
+                self.gameEnded(jenni, player)
+                return
+
+        else:
+            jenni.msg(CHANNEL, STRINGS['PASSED'] % self.playerOrder[self.currentPlayer])
+
+    def force_play(self, jenni, input):
+        now = datetime.now()
+        player = self.playerOrder[self.currentPlayer]
+        if now - self.lastActive > self.timeout:
+            jenni.msg(CHANNEL, STRINGS['FORCE_PLAY'] % player)
+            self._auto_play(jenni, player)
+            if self.game_on:
+                self.incPlayer()
+                self.lastActive = datetime.now()
+                self.showOnTurn(jenni)
+        else:
+            jenni.msg(CHANNEL, STRINGS['CANT_FORCE_PLAY'] % (player, self.timeout.seconds - (now - self.lastActive).seconds))
 
     def draw(self, jenni, input):
         nickk = (input.nick).lower()
@@ -497,30 +555,28 @@ class UnoBot:
         return (card[0] == self.topCard[0]) or (card[1] == self.topCard[1])
 
     def cardPlayed(self, jenni, card):
+        target_player = self.playerOrder[(self.currentPlayer + self.way) % len(self.players)]
         if card[1:] == 'D2':
-            jenni.msg(CHANNEL, STRINGS['D2'] % self.playerOrder[self.currentPlayer])
+            jenni.msg(CHANNEL, STRINGS['D2'] % target_player)
             z = [self.getCard(), self.getCard()]
-            jenni.notice(self.playerOrder[self.currentPlayer], STRINGS['CARDS'] % self.renderCards(self.playerOrder[self.currentPlayer], z, 0))
-            self.players[self.playerOrder[self.currentPlayer]].extend (z)
+            jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(target_player, z, 0))
+            self.players[target_player].extend (z)
             self.incPlayer()
         elif card[:2] == 'WD':
             num = int(card[2:-1]) # Have to rip the color off the end as well
-            jenni.msg(CHANNEL, STRINGS['WD%s' % num] % self.playerOrder[self.currentPlayer])
+            jenni.msg(CHANNEL, STRINGS['WD%s' % num] % target_player)
             z = [self.getCard() for _ in range(num)]
-            jenni.notice(self.playerOrder[self.currentPlayer], STRINGS['CARDS'] % self.renderCards(self.playerOrder[self.currentPlayer], z, 0))
-            self.players[self.playerOrder[self.currentPlayer]].extend(z)
+            jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(target_player, z, 0))
+            self.players[target_player].extend(z)
             self.incPlayer()
         elif card[1] == 'S':
-            jenni.msg(CHANNEL, STRINGS['SKIPPED'] % self.playerOrder[self.currentPlayer])
+            jenni.msg(CHANNEL, STRINGS['SKIPPED'] % target_player)
             self.incPlayer()
         elif card[1] == 'R' and card[0] != 'W':
             jenni.msg(CHANNEL, STRINGS['REVERSED'])
-            if len(self.players) > 2:
-                self.way = -self.way
+            if len(self.players) == 2:
                 self.incPlayer()
-                self.incPlayer()
-            else:
-                self.incPlayer()
+            self.way = -self.way
         self.topCard = card
 
     def gameEnded(self, jenni, winner):
@@ -568,6 +624,14 @@ class UnoBot:
     def leave(self, jenni, input):
         nickk = (input.nick).lower()
         self.remove_player(jenni, nickk)
+
+    def force_leave(self, jenni, input):
+        now = datetime.now()
+        player = self.playerOrder[self.currentPlayer]
+        if now - self.lastActive > self.timeout:
+            self.remove_player(jenni, player)
+        else:
+            jenni.msg(CHANNEL, STRINGS['CANT_FORCE_LEAVE'] % (player, self.timeout.seconds - (now - self.lastActive).seconds))
 
     def remove_player(self, jenni, nick):
         if not self.game_on:
@@ -706,13 +770,27 @@ deal.thread = False
 deal.rate = 0
 
 def play(jenni, input):
-    if not (input.sender).startswith('#'):
-        return
     unobot.play(jenni, input)
 play.commands = ['play', 'p']
 play.priority = 'low'
 play.thread = False
 play.rate = 0
+
+def auto_play(jenni, input):
+    unobot.auto_play(jenni, input)
+auto_play.commands = ['auto_play', 'ap']
+auto_play.priority = 'low'
+auto_play.thread = False
+auto_play.rate = 0
+
+def force_play(jenni, input):
+    if not (input.sender).startswith('#'):
+        return
+    unobot.force_play(jenni, input)
+force_play.commands = ['force_play']
+force_play.priority = 'low'
+force_play.thread = False
+force_play.rate = 0
 
 def draw(jenni, input):
     if not (input.sender).startswith('#'):
@@ -759,10 +837,19 @@ def leave(jenni, input):
     if not (input.sender).startswith('#'):
         return
     unobot.leave(jenni, input)
-leave.commands = ['leave']
+leave.commands = ['leave', 'ragequit', 'rage_quit']
 leave.priority = 'low'
 leave.thread = False
 leave.rate = 0
+
+def force_leave(jenni, input):
+    if not (input.sender).startswith('#'):
+        return
+    unobot.force_leave(jenni, input)
+force_leave.commands = ['force_leave', 'force_quit']
+force_leave.priority = 'low'
+force_leave.thread = False
+force_leave.rate = 0
 
 def remove_on_part(jenni, input):
     if input.sender == CHANNEL:
