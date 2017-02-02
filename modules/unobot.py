@@ -798,7 +798,7 @@ def force_leave(jenni, input):
     if not (input.sender).startswith('#'):
         return
     unobot.force_leave(jenni, input)
-force_leave.commands = ['force_leave']
+force_leave.commands = ['force_leave', 'force_quit']
 force_leave.priority = 'low'
 force_leave.thread = False
 force_leave.rate = 0
