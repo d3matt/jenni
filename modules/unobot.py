@@ -777,8 +777,6 @@ play.thread = False
 play.rate = 0
 
 def auto_play(jenni, input):
-    if not (input.sender).startswith('#'):
-        return
     unobot.auto_play(jenni, input)
 auto_play.commands = ['auto_play', 'ap']
 auto_play.priority = 'low'
