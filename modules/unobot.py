@@ -390,7 +390,10 @@ class UnoBot:
             color, face = card
             # if it's wild, random color
             if color == '*':
-                color = random.choice('BGRY')
+                colors_in_hand = [c for c,f in self.players[player] if c != '*']
+                if not colors_in_hand: # nothin', or nothin' but wilds
+                    colors_in_hand = 'BGRY'
+                color = random.choice(colors_in_hand)
             card = (color, face)
             jenni.msg(CHANNEL, STRINGS['PLAYS'] % (player, self.renderCards(player, [card], True)))
             self.cardPlayed(jenni, card)
