@@ -197,7 +197,7 @@ class UnoBot:
         self.owners = dict()
         self.players_pce = dict()  # Player color enabled hash table
         self.playerOrder = list()
-        self.game_on = False
+        self.game_on = False # Used as both a flag to represent if the game is started, and the name of the owner of the game
         self.currentPlayer = 0
         self.topCard = None
         self.way = 1
