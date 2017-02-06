@@ -216,12 +216,15 @@ class UnoBot:
         self.use_extra_special = 0
         self.scores = ScoreBoard(SCOREFILE, OLD_SCOREFILE)
 
+    def _activity(self):
+        self.lastActive = datetime.now()
+
     def start(self, jenni, owner):
         owner = owner.lower()
         if self.game_on:
             jenni.msg(CHANNEL, STRINGS['ALREADY_STARTED'] % self.game_on)
         else:
-            self.lastActive = datetime.now()
+            self._activity()
             self.game_on = owner
             self.deck = list()
             jenni.msg(CHANNEL, STRINGS['GAME_STARTED'] % owner)
@@ -251,7 +254,7 @@ class UnoBot:
                 if nickk not in self.players:
                     self.players[nickk] = list()
                     self.playerOrder.append(nickk)
-                    self.lastActive = datetime.now()
+                    self._activity()
                     if self.players_pce.get(nickk, 0):
                         jenni.notice(nickk, STRINGS['ENABLED_PCE'] % nickk)
                     if self.deck:
@@ -293,7 +296,7 @@ class UnoBot:
             self.use_extra_special = 0
 
         self.startTime = datetime.now()
-        self.lastActive = datetime.now()
+        self._activity()
         self.deck = self.createnewdeck()
         for i in xrange(0, 7):
             for p in self.players:
@@ -349,7 +352,7 @@ class UnoBot:
             return
 
         self.incPlayer()
-        self.lastActive = datetime.now()
+        self._activity()
         self.showOnTurn(jenni)
 
     def auto_play(self, jenni, input):
@@ -362,7 +365,7 @@ class UnoBot:
         self._auto_play(jenni, nickk)
         if self.game_on:
             self.incPlayer()
-            self.lastActive = datetime.now()
+            self._activity()
             self.showOnTurn(jenni)
 
     def _auto_play(self, jenni, player):
@@ -399,7 +402,7 @@ class UnoBot:
             self._auto_play(jenni, player)
             if self.game_on:
                 self.incPlayer()
-                self.lastActive = datetime.now()
+                self._activity()
                 self.showOnTurn(jenni)
         else:
             jenni.msg(CHANNEL, STRINGS['CANT_FORCE_PLAY'] % (player, self.timeout.seconds - (now - self.lastActive).seconds))
@@ -418,7 +421,7 @@ class UnoBot:
         jenni.msg(CHANNEL, STRINGS['DRAWS'] % self.playerOrder[self.currentPlayer])
         c = self.getCard()
         self.players[self.playerOrder[self.currentPlayer]].append(c)
-        self.lastActive = datetime.now()
+        self._activity()
         jenni.notice(nickk, STRINGS['DRAWN_CARD'] % self.renderCards (nickk, [c], 0))
 
     # this is not a typo, avoiding collision with Python's pass keyword
@@ -435,7 +438,7 @@ class UnoBot:
         self.drawn = False
         jenni.msg(CHANNEL, STRINGS['PASSED'] % self.playerOrder[self.currentPlayer])
         self.incPlayer()
-        self.lastActive = datetime.now()
+        self._activity()
         self.showOnTurn(jenni)
 
     def scores_messages(self, ranked_scores):
