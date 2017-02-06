@@ -185,6 +185,11 @@ class ScoreBoard(object):
         return self._stats_by('games')
 
 
+def tokenize(bot_input):
+    """Returns list of capitalized words from the input."""
+    return bot_input.upper().split()
+
+
 class UnoBot:
     def __init__(self):
         self.colored_card_nums = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'R', 'S', 'D2']
@@ -279,7 +284,7 @@ class UnoBot:
             jenni.msg(CHANNEL, STRINGS['ALREADY_DEALT'])
             return
 
-        tok = [z.strip() for z in str(input).upper().split(' ')]
+        tok = tokenize(input)
         if len(tok) > 1 and tok[1] == 'X': # .deal x [optional count]
             self.use_extra_special = len(self.playerOrder)
             if len(tok) > 2:
@@ -308,7 +313,7 @@ class UnoBot:
         if nickk != self.playerOrder[self.currentPlayer]:
             jenni.msg(CHANNEL, STRINGS['ON_TURN'] % self.playerOrder[self.currentPlayer])
             return
-        tok = [z.strip() for z in str(input).upper().split(' ')]
+        tok = tokenize(input)
         if len(tok) != 3:
             return
         searchcard = str()
