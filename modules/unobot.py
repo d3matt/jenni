@@ -793,8 +793,6 @@ force_play.thread = False
 force_play.rate = 0
 
 def draw(jenni, input):
-    if not (input.sender).startswith('#'):
-        return
     unobot.draw(jenni, input)
 draw.commands = ['draw', 'd', 'dr']
 draw.priority = 'low'
