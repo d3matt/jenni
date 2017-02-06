@@ -322,6 +322,10 @@ class UnoBot:
         if len(tok) != 3:
             return
         face, color = tok
+        # Allow face and color in reverse order
+        if (color not in self.colors or face not in self.all_cards) and color in self.all_cards and face in self.colors:
+            face, color = color, face
+
         playcard = (color, face)
         if color not in self.colors:
             jenni.msg(CHANNEL, STRINGS['DOESNT_PLAY'] % player)
@@ -340,7 +344,7 @@ class UnoBot:
         try:
             cards.remove(searchcard)
         except ValueError:
-            jenni.msg(CHANNEL, STRINGS['DONT_HAVE'] % player)
+            jenni.notice(player, STRINGS['DONT_HAVE'] % player)
             return
 
         self.drawn = False
