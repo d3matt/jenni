@@ -465,31 +465,26 @@ class UnoBot:
             jenni.msg(nickk, message)
 
     def createnewdeck(self):
-        ret = list()
-
+        deck = []
         for i in range(2):
-            for a in self.colored_card_nums:
-                for b in self.colors:
-                    if i > 0 and a == '0':
+            for face in self.colored_card_nums:
+                for color in self.colors:
+                    if i > 0 and face == '0':
                         continue
-                    ret.append(b + a)
-
+                    deck.append((color, face))
         for a in self.special_cards:
             for i in range(4):
-                ret.append(a)
-
+                deck.append(('*', a))
         if len(self.playerOrder) > 4:
-            ret *= 2
-
+            deck *= 2
         # Deal up to two sets of extra special cards per new deck
         for i in range(2):
             if self.use_extra_special > 0:
-                ret.extend(self.extra_special_cards)
+                deck.extend(('*', c) for c in self.extra_special_cards)
                 self.use_extra_special -= 1
 
-        random.shuffle(ret)
-
-        return ret
+        random.shuffle(deck)
+        return deck
 
     def getCard(self):
         ret = self.deck[0]
