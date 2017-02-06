@@ -321,7 +321,7 @@ class UnoBot:
         tok = tokenize(input)
         if len(tok) != 3:
             return
-        face, color = tok
+        face, color = tok[1:]
         # Allow face and color in reverse order
         if (color not in self.colors or face not in self.all_cards) and color in self.all_cards and face in self.colors:
             face, color = color, face
