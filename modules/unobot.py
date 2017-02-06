@@ -377,12 +377,12 @@ class UnoBot:
             self.showOnTurn(jenni)
 
     def _auto_play(self, jenni, player):
-        playable_cards = [c for c in self.players[player] if c[0] == 'W' or self.cardPlayable(c)]
+        playable_cards = [c for c in self.players[player] if self.cardPlayable(c)]
         if not playable_cards:
             jenni.msg(CHANNEL, STRINGS['DRAWS'] % player)
             c = self.getCard()
             self.players[player].append(c)
-        playable_cards = [c for c in self.players[player] if c[0] == 'W' or self.cardPlayable(c)]
+        playable_cards = [c for c in self.players[player] if self.cardPlayable(c)]
         if playable_cards:
             # random card
             card = random.choice(playable_cards)
@@ -405,7 +405,7 @@ class UnoBot:
                 return
 
         else:
-            jenni.msg(CHANNEL, STRINGS['PASSED'] % self.playerOrder[self.currentPlayer])
+            jenni.msg(CHANNEL, STRINGS['PASSED'] % player)
 
     def force_play(self, jenni, input):
         now = datetime.now()
