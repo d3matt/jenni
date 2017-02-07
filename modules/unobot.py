@@ -311,6 +311,29 @@ class UnoBot:
         self.showOnTurn(jenni)
         self.dealt = True
 
+    def _play_card(self, jenni, player, card):
+        """The card has already been removed from the player's hand; finishes
+        the turn, or even the game, if someone won.  Wild cards have their
+        color already set.
+        """
+        jenni.msg(CHANNEL, STRINGS['PLAYS'] % (player, self.renderCards(player, [card], True)))
+        self.cardPlayed(jenni, card)
+        if len(self.players[player]) == 1:
+            jenni.msg(CHANNEL, STRINGS['UNO'] % player)
+        elif len(self.players[player]) == 0:
+            jenni.msg(CHANNEL, STRINGS['WIN'] % (player, (datetime.now() - self.startTime)))
+            self.gameEnded(jenni, player)
+            return
+        self.incPlayer()
+        self._activity()
+        self.showOnTurn(jenni)
+
+    def _pass(self, jenni, player):
+        jenni.msg(CHANNEL, STRINGS['PASSED'] % self.playerOrder[self.currentPlayer])
+        self.incPlayer()
+        self._activity()
+        self.showOnTurn(jenni)
+
     def play(self, jenni, input):
         player = (input.nick).lower()
         if not self.game_on or not self.deck:
@@ -347,21 +370,7 @@ class UnoBot:
             jenni.notice(player, STRINGS['DONT_HAVE'] % player)
             return
 
-        self.drawn = False
-
-        jenni.msg(CHANNEL, STRINGS['PLAYS'] % (player, self.renderCards(player, [playcard], True)))
-        self.cardPlayed(jenni, playcard)
-
-        if len(cards) == 1:
-            jenni.msg(CHANNEL, STRINGS['UNO'] % player)
-        elif len(cards) == 0:
-            jenni.msg(CHANNEL, STRINGS['WIN'] % (player, (datetime.now() - self.startTime)))
-            self.gameEnded(jenni, player)
-            return
-
-        self.incPlayer()
-        self._activity()
-        self.showOnTurn(jenni)
+        self._play_card(jenni, player, playcard)
 
     def auto_play(self, jenni, input):
         nickk = (input.nick).lower()
@@ -371,17 +380,11 @@ class UnoBot:
             jenni.msg(CHANNEL, STRINGS['ON_TURN'] % self.playerOrder[self.currentPlayer])
             return
         self._auto_play(jenni, nickk)
-        if self.game_on:
-            self.incPlayer()
-            self._activity()
-            self.showOnTurn(jenni)
 
     def _auto_play(self, jenni, player):
         playable_cards = [c for c in self.players[player] if self.cardPlayable(c)]
         if not playable_cards:
-            jenni.msg(CHANNEL, STRINGS['DRAWS'] % player)
-            c = self.getCard()
-            self.players[player].append(c)
+            self._draw(jenni, player)
         playable_cards = [c for c in self.players[player] if self.cardPlayable(c)]
         if playable_cards:
             # random card
@@ -395,17 +398,9 @@ class UnoBot:
                     colors_in_hand = 'BGRY'
                 color = random.choice(colors_in_hand)
             card = (color, face)
-            jenni.msg(CHANNEL, STRINGS['PLAYS'] % (player, self.renderCards(player, [card], True)))
-            self.cardPlayed(jenni, card)
-            if len(self.players[player]) == 1:
-                jenni.msg(CHANNEL, STRINGS['UNO'] % player)
-            elif len(self.players[player]) == 0:
-                jenni.msg(CHANNEL, STRINGS['WIN'] % (player, (datetime.now() - self.startTime)))
-                self.gameEnded(jenni, player)
-                return
-
+            self._play_card(jenni, player, card)
         else:
-            jenni.msg(CHANNEL, STRINGS['PASSED'] % player)
+            self._pass(jenni, player)
 
     def force_play(self, jenni, input):
         now = datetime.now()
@@ -413,46 +408,41 @@ class UnoBot:
         if now - self.lastActive > self.timeout:
             jenni.msg(CHANNEL, STRINGS['FORCE_PLAY'] % player)
             self._auto_play(jenni, player)
-            if self.game_on:
-                self.incPlayer()
-                self._activity()
-                self.showOnTurn(jenni)
         else:
             jenni.msg(CHANNEL, STRINGS['CANT_FORCE_PLAY'] % (player, self.timeout.seconds - (now - self.lastActive).seconds))
 
+    def _draw(self, jenni, player):
+        self.drawn = True
+        jenni.msg(CHANNEL, STRINGS['DRAWS'] % player)
+        card = self.getCard()
+        self.players[player].append(card)
+        self._activity()
+        jenni.notice(player, STRINGS['DRAWN_CARD'] % self.renderCards(player, [card], 0))
+
     def draw(self, jenni, input):
-        nickk = (input.nick).lower()
+        player = input.nick.lower()
         if not self.game_on or not self.deck:
             return
-        if nickk != self.playerOrder[self.currentPlayer]:
+        if player != self.playerOrder[self.currentPlayer]:
             jenni.msg(CHANNEL, STRINGS['ON_TURN'] % self.playerOrder[self.currentPlayer])
             return
         if self.drawn:
             jenni.msg(CHANNEL, STRINGS['DRAWN_ALREADY'])
             return
-        self.drawn = True
-        jenni.msg(CHANNEL, STRINGS['DRAWS'] % self.playerOrder[self.currentPlayer])
-        c = self.getCard()
-        self.players[self.playerOrder[self.currentPlayer]].append(c)
-        self._activity()
-        jenni.notice(nickk, STRINGS['DRAWN_CARD'] % self.renderCards (nickk, [c], 0))
+        self._draw(jenni, player)
 
     # this is not a typo, avoiding collision with Python's pass keyword
     def passs(self, jenni, input):
-        nickk = (input.nick).lower()
+        player = input.nick.lower()
         if not self.game_on or not self.deck:
             return
-        if nickk != self.playerOrder[self.currentPlayer]:
-            jenni.msg(CHANNEL, STRINGS['ON_TURN'] % self.playerOrder[self.currentPlayer])
+        if player != self.playerOrder[self.currentPlayer]:
+            jenni.msg(CHANNEL, STRINGS['ON_TURN'] % self.get_current_player())
             return
         if not self.drawn:
-            jenni.msg(CHANNEL, STRINGS['DRAW_FIRST'] % self.playerOrder[self.currentPlayer])
+            jenni.msg(CHANNEL, STRINGS['DRAW_FIRST'] % player)
             return
-        self.drawn = False
-        jenni.msg(CHANNEL, STRINGS['PASSED'] % self.playerOrder[self.currentPlayer])
-        self.incPlayer()
-        self._activity()
-        self.showOnTurn(jenni)
+        self._pass(jenni, player)
 
     def scores_messages(self, ranked_scores):
         for n, score in enumerate(ranked_scores, 1):
@@ -609,6 +599,7 @@ class UnoBot:
         return (self.currentPlayer + self.way) % len(self.players)
 
     def incPlayer(self):
+        self.drawn = False
         self.currentPlayer = self.next_player_number()
 
     def get_next_player(self):
