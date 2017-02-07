@@ -549,11 +549,11 @@ class UnoBot:
 
     def renderCards(self, nick, cards, is_chan):
         irc_colors = {
-            '*': '\x0300,01',
-            'B': '\x0311,01',
-            'G': '\x0309,01',
-            'R': '\x0304,01',
-            'Y': '\x0308,01',
+            '*': '\x0301,00',
+            'B': '\x0301,11',
+            'G': '\x0301,09',
+            'R': '\x0301,04',
+            'Y': '\x0301,08',
         }
         nickk = nick
         if nick:
