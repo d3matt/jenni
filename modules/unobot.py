@@ -408,6 +408,10 @@ class UnoBot:
             self._draw(jenni, player)
         playable_cards = [c for c in self.players[player] if self.cardPlayable(c)]
         if playable_cards:
+            # If we have a non-wild card that plays, choose from those
+            non_wilds = [c for c in playable_cards if c[0] != '*']
+            if non_wilds:
+                playable_cards = non_wilds
             # random card
             card = random.choice(playable_cards)
             self.players[player].remove(card)
