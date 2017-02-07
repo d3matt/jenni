@@ -554,6 +554,7 @@ class UnoBot:
             'G': '\x0301,09',
             'R': '\x0301,04',
             'Y': '\x0301,08',
+            None: '\x0300,01',
         }
         nickk = nick
         if nick:
@@ -563,7 +564,7 @@ class UnoBot:
             # Might consider this format: "%s[%s%s]" % (irc_colors[color], color, face))
             if not is_chan:
                 if self.players_pce.get(nickk, 0):
-                    rendered = '%s%s/[%s] ' % (irc_colors[color], color, face)
+                    rendered = '%s%s/[%s]%s ' % (irc_colors[color], color, face, irc_colors[None])
                 else:
                     rendered = '%s[%s]' % (irc_colors[color], face)
             else:
