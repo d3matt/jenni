@@ -100,6 +100,8 @@ STRINGS = {
     'CANT_FORCE_PLAY': '\x0300,01You can\'t force %s to play yet; wait another %s seconds.',
     'CANT_FORCE_LEAVE': '\x0300,01You can\'t force %s to leave the game yet; wait another %s seconds.',
     'PLAYS': '\x0300,01%s plays %s.',
+    'BOT_PLAY_ON': '\x0300,01%s has turned on autopilot.',
+    'BOT_PLAY_OFF': '\x0300,01%s has turned off autopilot.',
 }
 
 def parse_old_scores(filename):
@@ -217,7 +219,7 @@ class UnoBot:
         self.nonstartable_cards = set(itertools.product(self.colors, ['R', 'S', 'D2'])) | set(('*', face) for face in self.all_special_cards)
         self.use_extra_special = 0
         self.scores = ScoreBoard(SCOREFILE, OLD_SCOREFILE)
-        self.bot_players = []
+        self.bot_players = set()
 
     def _activity(self):
         self.lastActive = datetime.now()
@@ -234,7 +236,7 @@ class UnoBot:
             self.players = dict()
             self.players[owner] = list()
             self.playerOrder = [owner]
-            self.bot_players = []
+            self.bot_players = set()
             jenni.msg(CHANNEL, STRINGS['JOINED'] % (owner, self.playerOrder.index(owner) + 1))
             if self.players_pce.get(owner, 0):
                 jenni.notice(owner, STRINGS['ENABLED_PCE'] % owner)
@@ -259,7 +261,19 @@ class UnoBot:
         tokens = tokenize(input)
         name = tokens[1].lower()
         self._add_player(jenni, name)
-        self.bot_players.append(name)
+        self.bot_players.add(name)
+
+    def bot_me_on(self, jenni, input):
+        player = input.nick.lower()
+        self.bot_players.add(player)
+        jenni.msg(CHANNEL, STRINGS['BOT_PLAY_ON'] % player)
+        if self.get_current_player() == player:
+            self._play_bots(jenni)
+
+    def bot_me_off(self, jenni, input):
+        player = input.nick.lower()
+        self.bot_players.discard(player)
+        jenni.msg(CHANNEL, STRINGS['BOT_PLAY_OFF'] % player)
 
     def _add_player(self, jenni, player):
         if self.game_on:
@@ -793,6 +807,24 @@ deal.commands = ['deal']
 deal.priority = 'low'
 deal.thread = False
 deal.rate = 0
+
+def bot_me_on(jenni, input):
+    if not (input.sender).startswith('#'):
+        return
+    unobot.bot_me_on(jenni, input)
+bot_me_on.commands = ['bot_me_on', 'bot-on']
+bot_me_on.priority = 'low'
+bot_me_on.thread = False
+bot_me_on.rate = 0
+
+def bot_me_off(jenni, input):
+    if not (input.sender).startswith('#'):
+        return
+    unobot.bot_me_off(jenni, input)
+bot_me_off.commands = ['bot_me_off', 'bot-off']
+bot_me_off.priority = 'low'
+bot_me_off.thread = False
+bot_me_off.rate = 0
 
 def play(jenni, input):
     unobot.play(jenni, input)
