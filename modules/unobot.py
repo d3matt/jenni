@@ -214,7 +214,7 @@ class UnoBot:
         self.dealt = False
         self.lastActive = datetime.now()
         self.timeout = timedelta(minutes=INACTIVE_TIMEOUT)
-        self.nonstartable_cards = ['%s%s' % c for c in itertools.product(self.colors, ['R', 'S', 'D2'])] + self.all_special_cards
+        self.nonstartable_cards = set(itertools.product(self.colors, ['R', 'S', 'D2'])) | set(('*', face) for face in self.all_special_cards)
         self.use_extra_special = 0
         self.scores = ScoreBoard(SCOREFILE, OLD_SCOREFILE)
 
