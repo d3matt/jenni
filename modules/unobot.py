@@ -287,6 +287,15 @@ class UnoBot:
         self.bot_players.discard(player)
         jenni.msg(CHANNEL, STRINGS['BOT_PLAY_OFF'] % player)
 
+    def bot_force_off(self, jenni, input):
+        tok = tokenize(input)
+        try:
+            player = tok[1].lower()
+        except IndexError:
+            return
+        self.bot_players.discard(player)
+        jenni.msg(CHANNEL, STRINGS['BOT_PLAY_OFF'] % player)
+
     def _add_player(self, jenni, player):
         if self.game_on:
             if not self.dealt:
@@ -851,6 +860,15 @@ bot_force_on.commands = ['bot_force_on', 'force-bot-on']
 bot_force_on.priority = 'low'
 bot_force_on.thread = False
 bot_force_on.rate = 0
+
+def bot_force_off(jenni, input):
+    if not input.sender.startswith('#'):
+        return
+    unobot.bot_force_off(jenni, input)
+bot_force_off.commands = ['bot_force_off', 'force-bot-off']
+bot_force_off.priority = 'low'
+bot_force_off.thread = False
+bot_force_off.rate = 0
 
 def play(jenni, input):
     unobot.play(jenni, input)
