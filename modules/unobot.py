@@ -948,7 +948,7 @@ remove_on_nickchg.rate = 0
 
 def unostats(jenni, input):
     unobot.unostat(jenni, input)
-unostats.commands = ['unostats']
+unostats.commands = ['unostats', 'unoscores']
 unostats.priority = 'low'
 unostats.thread = False
 unostats.rate = 0
