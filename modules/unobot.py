@@ -99,6 +99,8 @@ STRINGS = {
     'FORCE_PLAY': '\x0300,01Forcing %s to play.',
     'CANT_FORCE_PLAY': '\x0300,01You can\'t force %s to play yet; wait another %s seconds.',
     'CANT_FORCE_LEAVE': '\x0300,01You can\'t force %s to leave the game yet; wait another %s seconds.',
+    'FORCE_BOT': '\x0300,01Forcing %s to enable autopilot.',
+    'CANT_FORCE_BOT': '\x0300,01You can\'t force %s to enable autopilot yet; wait another %s seconds.',
     'PLAYS': '\x0300,01%s plays %s.',
     'BOT_PLAY_ON': '\x0300,01%s has turned on autopilot.',
     'BOT_PLAY_OFF': '\x0300,01%s has turned off autopilot.',
@@ -269,6 +271,16 @@ class UnoBot:
         jenni.msg(CHANNEL, STRINGS['BOT_PLAY_ON'] % player)
         if self.get_current_player() == player:
             self._play_bots(jenni)
+
+    def bot_force_on(self, jenni, input):
+        now = datetime.now()
+        player = self.playerOrder[self.currentPlayer]
+        if now - self.lastActive > self.timeout:
+            jenni.msg(CHANNEL, STRINGS['FORCE_BOT'] % player)
+            self.bot_players.add(player)
+            self._play_bots(jenni)
+        else:
+            jenni.msg(CHANNEL, STRINGS['CANT_FORCE_BOT'] % (player, self.timeout.seconds - (now - self.lastActive).seconds))
 
     def bot_me_off(self, jenni, input):
         player = input.nick.lower()
@@ -830,6 +842,15 @@ bot_me_off.commands = ['bot_me_off', 'bot-off']
 bot_me_off.priority = 'low'
 bot_me_off.thread = False
 bot_me_off.rate = 0
+
+def bot_force_on(jenni, input):
+    if not input.sender.startswith('#'):
+        return
+    unobot.bot_force_on(jenni, input)
+bot_force_on.commands = ['bot_force_on', 'force-bot-on']
+bot_force_on.priority = 'low'
+bot_force_on.thread = False
+bot_force_on.rate = 0
 
 def play(jenni, input):
     unobot.play(jenni, input)
