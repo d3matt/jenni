@@ -41,12 +41,13 @@ import operator
 
 away_last = 0
 
+CONFIG_DIR=os.path.expanduser("~/.jenni")
 try:
-    config_fd = open(os.path.expanduser("~/.jenni/unobot.yml"))
+    config_fd = open(os.path.join(CONFIG_DIR, "unobot.yml"))
 except IOError:
     config = {'channel': None, 'inactivity_timeout_minutes': 5}
-    yaml.dump(config, open(os.path.expanduser("~/.jenni/unobot.yml"), 'w'), default_flow_style=False)
-    config_fd = open(os.path.expanduser("~/.jenni/unobot.yml"))
+    yaml.dump(config, open(os.path.join(CONFIG_DIR, "unobot.yml"), 'w'), default_flow_style=False)
+    config_fd = open(os.path.join(CONFIG_DIR, "unobot.yml"))
 CONFIG = yaml.load(config_fd)
 # The channel to play uno in
 CHANNEL = CONFIG['channel']
@@ -58,8 +59,8 @@ INACTIVE_TIMEOUT = CONFIG['inactivity_timeout_minutes']
 if not CHANNEL:
     raise Exception("No UNO channel configured; unobot deactivated")
 
-OLD_SCOREFILE = os.path.expanduser("~/.jenni/unoscores.txt")
-SCOREFILE = os.path.expanduser("~/.jenni/unoscores.yml")
+OLD_SCOREFILE = os.path.join(CONFIG_DIR, "unoscores.txt")
+SCOREFILE = os.path.join(CONFIG_DIR, "unoscores.yml")
 
 STRINGS = {
     'ALREADY_STARTED': '\x0300,01Game already started by %s! Type ".join" to join!',
