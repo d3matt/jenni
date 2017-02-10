@@ -41,13 +41,14 @@ import operator
 
 away_last = 0
 
-CONFIG_DIR=os.path.expanduser("~/.jenni")
+CONFIG_DIR = os.path.expanduser("~/.jenni")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "unobot.yml")
 try:
-    config_fd = open(os.path.join(CONFIG_DIR, "unobot.yml"))
+    config_fd = open(CONFIG_FILE)
 except IOError:
     config = {'channel': None, 'inactivity_timeout_minutes': 5}
-    yaml.dump(config, open(os.path.join(CONFIG_DIR, "unobot.yml"), 'w'), default_flow_style=False)
-    config_fd = open(os.path.join(CONFIG_DIR, "unobot.yml"))
+    yaml.dump(config, open(CONFIG_FILE, 'w'), default_flow_style=False)
+    config_fd = open(CONFIG_FILE)
 CONFIG = yaml.load(config_fd)
 # The channel to play uno in
 CHANNEL = CONFIG['channel']
@@ -57,7 +58,7 @@ CHANNEL = CONFIG['channel']
 INACTIVE_TIMEOUT = CONFIG['inactivity_timeout_minutes']
 
 if not CHANNEL:
-    raise Exception("No UNO channel configured; unobot deactivated")
+    raise Exception("No UNO channel configured; unobot deactivated.   Modify %s to set the channel." % CONFIG_FILE)
 
 OLD_SCOREFILE = os.path.join(CONFIG_DIR, "unoscores.txt")
 SCOREFILE = os.path.join(CONFIG_DIR, "unoscores.yml")
