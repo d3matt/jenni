@@ -403,12 +403,8 @@ class UnoBot:
             face, color = color, face
 
         playcard = (color, face)
-        if color not in self.colors:
+        if color not in self.colors or face not in self.all_cards or not self.cardPlayable(playcard):
             jenni.msg(CHANNEL, STRINGS['DOESNT_PLAY'] % player)
-        if face not in self.all_cards:
-            jenni.msg(CHANNEL, STRINGS['DOESNT_PLAY'] % player)
-        if not self.cardPlayable(playcard):
-            jenni.msg(CHANNEL, STRINGS['DOESNT_PLAY'] % self.playerOrder[self.currentPlayer])
             return
 
         if face in self.all_special_cards:
@@ -562,7 +558,7 @@ class UnoBot:
             return
         msg = STRINGS['NEXT_START']
 
-        future_play_order = self.playerOrder[self.currentPlayer+1:] + self.playerOrder[:self.currentPlayer]
+        future_play_order = self.playerOrder[self.currentPlayer+1:] + self.playerOrder[:self.currentPlayer+1]
         if self.way == -1:
             future_play_order.reverse()
         players_and_card_counts = [STRINGS['NEXT_PLAYER'] % (player, len(self.get_players_cards(player))) for player in future_play_order]
@@ -602,7 +598,7 @@ class UnoBot:
             else:
                 rendered = '%s(%s) [%s]' % (irc_colors[color], color, face)
             rendered_cards.append(rendered)
-        rendered_cards.append(irc_colors['*'])
+        rendered_cards.append(irc_colors[None])
         return ''.join(rendered_cards)
 
     def cardPlayable(self, card):
