@@ -374,7 +374,7 @@ class UnoBot:
         the turn, or even the game, if someone won.  Wild cards have their
         color already set.
         """
-        jenni.msg(CHANNEL, STRINGS['PLAYS'] % (player, self.renderCards(player, [card], True)))
+        jenni.msg(CHANNEL, STRINGS['PLAYS'] % (player, self.renderCards([card], nick=player)))
         self.cardPlayed(jenni, card)
         if len(self.players[player]) == 1:
             jenni.msg(CHANNEL, STRINGS['UNO'] % player)
@@ -471,7 +471,7 @@ class UnoBot:
         card = self.getCard()
         self.players[player].append(card)
         self._activity()
-        jenni.notice(player, STRINGS['DRAWN_CARD'] % self.renderCards(player, [card], 0))
+        jenni.notice(player, STRINGS['DRAWN_CARD'] % self.renderCards([card], nick=player))
 
     def draw(self, jenni, input):
         player = input.nick.lower()
@@ -550,7 +550,7 @@ class UnoBot:
         return ret
 
     def showOnTurn(self, jenni):
-        jenni.msg(CHANNEL, STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards(None, [self.topCard], 1)))
+        jenni.msg(CHANNEL, STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards([self.topCard])))
         self.showCards(jenni, self.playerOrder[self.currentPlayer])
 
     def showCards(self, jenni, user):
@@ -568,15 +568,15 @@ class UnoBot:
         if user not in self.players:
             jenni.notice(user, msg)
         else:
-            jenni.notice(user, STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards(None, [self.topCard], 1)))
+            jenni.notice(user, STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards([self.topCard])))
             # Show up to 15 cards per message
             cards = sorted(list(self.players[user]))
             while cards:
-                jenni.notice(user, STRINGS['YOUR_CARDS'] % self.renderCards(user, cards[:15], 0))
+                jenni.notice(user, STRINGS['YOUR_CARDS'] % self.renderCards(cards[:15], nick=user))
                 cards = cards[15:]
             jenni.notice(user, msg)
 
-    def renderCards(self, nick, cards, is_chan):
+    def renderCards(self, cards, nick=None):
         irc_colors = {
             '*': '\x0301,00',
             'B': '\x0301,11',
@@ -585,19 +585,24 @@ class UnoBot:
             'Y': '\x0301,08',
             None: '\x0f',
         }
-        nickk = nick
+
         if nick:
-            nickk = (nick).lower()
+            if self.players_pce.get(nick.lower(), False):
+                render_style = 'pce'
+            else:
+                render_style = 'normal'
+        else:
+            render_style = 'channel'
+
         rendered_cards = []
         for color, face in sorted(cards):
             # Might consider this format: "%s[%s%s]" % (irc_colors[color], color, face))
-            if not is_chan:
-                if self.players_pce.get(nickk, 0):
-                    rendered = '%s%s/[%s]%s ' % (irc_colors[color], color, face, irc_colors[None])
-                else:
-                    rendered = '%s[%s]' % (irc_colors[color], face)
-            else:
+            if render_style == 'channel':
                 rendered = '%s(%s) [%s]' % (irc_colors[color], color, face)
+            elif render_style == 'normal':
+                rendered = '%s[%s]' % (irc_colors[color], face)
+            elif render_style == 'pce':
+                rendered = '%s%s/[%s]%s ' % (irc_colors[color], color, face, irc_colors[None])
             rendered_cards.append(rendered)
         rendered_cards.append(irc_colors[None])
         return ''.join(rendered_cards)
@@ -618,16 +623,16 @@ class UnoBot:
         color, face = card
         if face == 'D2':
             jenni.msg(CHANNEL, STRINGS['D2'] % target_player)
-            z = [self.getCard(), self.getCard()]
-            jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(target_player, z, 0))
-            self.players[target_player].extend (z)
+            cards = [self.getCard(), self.getCard()]
+            jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(cards, nick=target_player))
+            self.players[target_player].extend (cards)
             self.incPlayer()
         elif face in ['WD4', 'WD40']:
             num = int(face[2:])
             jenni.msg(CHANNEL, STRINGS['WD%s' % num] % target_player)
-            z = [self.getCard() for _ in range(num)]
-            jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(target_player, z, 0))
-            self.players[target_player].extend(z)
+            cards = [self.getCard() for _ in range(num)]
+            jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(cards, nick=target_player))
+            self.players[target_player].extend(cards)
             self.incPlayer()
         elif face == 'S':
             jenni.msg(CHANNEL, STRINGS['SKIPPED'] % target_player)
@@ -681,7 +686,7 @@ class UnoBot:
     def showTopCard_demand(self, jenni):
         if not self.game_on or not self.deck:
             return
-        jenni.say(STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards(None, [self.topCard], 1)))
+        jenni.say(STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards([self.topCard])))
 
     def leave(self, jenni, input):
         nickk = (input.nick).lower()
@@ -724,7 +729,7 @@ class UnoBot:
                 jenni.msg(CHANNEL, STRINGS['OWNER_CHANGE'] % (nick, self.playerOrder[0]))
 
             if self.dealt:
-                jenni.msg(CHANNEL, STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards(None, [self.topCard], 1)))
+                jenni.msg(CHANNEL, STRINGS['TOP_CARD'] % (self.playerOrder[self.currentPlayer], self.renderCards([self.topCard])))
 
             if poke_bots:
                 self._play_bots(jenni)
