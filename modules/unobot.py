@@ -403,12 +403,8 @@ class UnoBot:
             face, color = color, face
 
         playcard = (color, face)
-        if color not in self.colors:
+        if color not in self.colors or face not in self.all_cards or not self.cardPlayable(playcard):
             jenni.msg(CHANNEL, STRINGS['DOESNT_PLAY'] % player)
-        if face not in self.all_cards:
-            jenni.msg(CHANNEL, STRINGS['DOESNT_PLAY'] % player)
-        if not self.cardPlayable(playcard):
-            jenni.msg(CHANNEL, STRINGS['DOESNT_PLAY'] % self.playerOrder[self.currentPlayer])
             return
 
         if face in self.all_special_cards:
