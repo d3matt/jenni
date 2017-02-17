@@ -94,7 +94,7 @@ STRINGS = {
     'D2': '\x0300,01%s draws two and is skipped!',
     'CARDS': '\x0300,01Cards: %s',
     'WD4': '\x0300,01%s draws four and is skipped!',
-    'WD40': '\x0300,01%s draws forty and is skipped!',
+    'WD40': '\x0300,01Draw four AROUND!  Everyone but %s draws four and is skipped!',
     'SKIPPED': '\x0300,01%s is skipped!',
     'REVERSED': '\x0300,01Order reversed!',
     'GAINS': '\x0300,01%s gains %s points!',
@@ -622,13 +622,21 @@ class UnoBot:
             jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(target_player, z, 0))
             self.players[target_player].extend (z)
             self.incPlayer()
-        elif face in ['WD4', 'WD40']:
+        elif face == 'WD4':
             num = int(face[2:])
             jenni.msg(CHANNEL, STRINGS['WD%s' % num] % target_player)
             z = [self.getCard() for _ in range(num)]
             jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(target_player, z, 0))
             self.players[target_player].extend(z)
             self.incPlayer()
+        elif face == 'WD40':
+            jenni.msg(CHANNEL, STRINGS['WD40'] % self.get_current_player())
+            for _ in range(len(self.playerOrder)-1):
+                self.incPlayer()
+                target_player = self.get_current_player()
+                z = [self.getCard() for _ in range(4)]
+                jenni.notice(target_player, STRINGS['CARDS'] % self.renderCards(target_player, z, 0))
+                self.players[target_player].extend(z)
         elif face == 'S':
             jenni.msg(CHANNEL, STRINGS['SKIPPED'] % target_player)
             self.incPlayer()
