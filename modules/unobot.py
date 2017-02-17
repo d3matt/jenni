@@ -909,8 +909,6 @@ draw.thread = False
 draw.rate = 0
 
 def passs(jenni, input):
-    if not (input.sender).startswith('#'):
-        return
     unobot.passs(jenni, input)
 passs.commands = ['pass', 'pa']
 passs.priority = 'low'
