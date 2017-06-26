@@ -271,6 +271,17 @@ second_addpoint_command.priority = 'high'
 #second_addpoint_command.rate = 60 * 10
 
 
+def pre_addpoint_command(jenni, input):
+    """++<nick> - Adds 1 point ot the score system for <nick>."""
+    nick = input.group(1)
+    if not nick:
+        return
+    scores.editpoints(jenni, input, nick, True)
+pre_addpoint_command.rule = r'^\+\+(\S+?)($|\s)'
+pre_addpoint_command.priority = 'high'
+#pre_addpoint_command.rate = 60 * 10
+
+
 def rmpoint_command(jenni, input):
     """.rmpoint <nick> - Removes 1 point to the score system for <nick>."""
     nick = input.group(2)
@@ -293,6 +304,16 @@ def second_rmpoint_command(jenni, input):
 second_rmpoint_command.rule = r'^(\S+?):?\s*(--|\-1|-=\s*1)($|\s)'
 second_rmpoint_command.priority = 'high'
 #second_rmpoint_command.rate = 60 * 10
+
+def pre_rmpoint_command(jenni, input):
+    """--<nick> - Removes 1 point to the score system for <nick>."""
+    nick = input.group(1)
+    if not nick:
+        return
+    scores.editpoints(jenni, input, nick, False)
+pre_rmpoint_command.rule = r'^--(\S+?)($|\s)'
+pre_rmpoint_command.priority = 'high'
+#pre_rmpoint_command.rate = 60 * 10
 
 
 def view_scores(jenni, input):
